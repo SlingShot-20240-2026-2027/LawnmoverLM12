@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsystems;
+package org.firstinspires.ftc.teamcode.Subsystems;
 
 import static com.pedropathing.ivy.commands.Commands.instant;
 
@@ -8,39 +8,34 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @Config
-public class ShooterAuto {
+public class Shooter {
 
     public static String FLYWHEEL1_NAME = "flywheel1";
     public static String FLYWHEEL2_NAME = "flywheel2";
-    public static String HOOD_SERVO_NAME = "hood";
 
-    public static double FLYWHEEL_VELOCITY = 1150;
-    public static double HOOD_POSITION = 0.4;
+    public static double FLYWHEEL_VELOCITY = 1350;
 
-    public static double FLYWHEEL_P = 1.0;
+    public static double FLYWHEEL_P = 0.0;
     public static double FLYWHEEL_I = 0.0;
-    public static double FLYWHEEL_D = 0.01;
-    public static double FLYWHEEL_F = 17.6;
+    public static double FLYWHEEL_D = 0.0;
+    public static double FLYWHEEL_F = 14.0;
 
     public static double READY_TOLERANCE = 30;
 
     private final DcMotorEx flywheel1;
     private final DcMotorEx flywheel2;
-    private final Servo hood;
 
     private boolean on = false;
     private double targetVelocity = 0;
 
-    public ShooterAuto(HardwareMap hardwareMap) {
+    public Shooter(HardwareMap hardwareMap) {
         flywheel1 = hardwareMap.get(DcMotorEx.class, FLYWHEEL1_NAME);
         flywheel2 = hardwareMap.get(DcMotorEx.class, FLYWHEEL2_NAME);
-        hood = hardwareMap.get(Servo.class, HOOD_SERVO_NAME);
 
         flywheel1.setDirection(DcMotorEx.Direction.REVERSE);
         flywheel2.setDirection(DcMotorEx.Direction.REVERSE);
@@ -48,15 +43,14 @@ public class ShooterAuto {
         flywheel2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         coast();
-        hood.setPosition(HOOD_POSITION);
     }
 
     public Command on() {
-        return instant(() -> spin(FLYWHEEL_VELOCITY, HOOD_POSITION)).requiring(this);
+        return instant(() -> spin(FLYWHEEL_VELOCITY)).requiring(this);
     }
 
-    public Command on(double velocity, double hoodPosition) {
-        return instant(() -> spin(velocity, hoodPosition)).requiring(this);
+    public Command on(double velocity) {
+        return instant(() -> spin(velocity)).requiring(this);
     }
 
     public Command idle() {
@@ -75,7 +69,7 @@ public class ShooterAuto {
                 .setEnd(endCondition -> stop());
     }
 
-    public void spin(double velocity, double hoodPosition) {
+    public void spin(double velocity) {
         if (velocity <= 0) {
             stop();
             return;
@@ -91,7 +85,6 @@ public class ShooterAuto {
         targetVelocity = velocity;
         flywheel1.setVelocity(velocity);
         flywheel2.setVelocity(velocity);
-        hood.setPosition(hoodPosition);
     }
 
     public void stop() {

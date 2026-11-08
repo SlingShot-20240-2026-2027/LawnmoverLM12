@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsystems;
+package org.firstinspires.ftc.teamcode.Subsystems;
 
 import static com.pedropathing.ivy.commands.Commands.instant;
 
@@ -9,17 +9,17 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-public class TransferAuto {
+public class Transfer {
 
-    public enum State {TRANSFER, IDLE}
+    public enum State {TRANSFER, REVERSE, IDLE}
     private final DcMotorEx transfer;
     private State state = State.IDLE;
 
-    public TransferAuto(HardwareMap hardwareMap) {
+    public Transfer(HardwareMap hardwareMap) {
         this(hardwareMap, "transfer");
     }
 
-    public TransferAuto(HardwareMap hardwareMap, String name) {
+    public Transfer(HardwareMap hardwareMap, String name) {
         transfer = hardwareMap.get(DcMotorEx.class, name);
         transfer.setDirection(DcMotorSimple.Direction.REVERSE);
         transfer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -31,6 +31,9 @@ public class TransferAuto {
         switch (newState) {
             case TRANSFER:
                 transfer.setPower(1.0);
+                break;
+            case REVERSE:
+                transfer.setPower(-1.0);
                 break;
             case IDLE:
             default:
@@ -45,6 +48,10 @@ public class TransferAuto {
 
     public Command transfer() {
         return instant(() -> setState(State.TRANSFER)).requiring(this);
+    }
+
+    public Command reverse() {
+        return instant(() -> setState(State.REVERSE)).requiring(this);
     }
 
     public Command idle() {

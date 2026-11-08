@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsystems;
+package org.firstinspires.ftc.teamcode.Subsystems;
 
 import static com.pedropathing.ivy.commands.Commands.instant;
 
@@ -13,7 +13,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @Config
-public class IntakeAuto {
+public class Intake {
 
     public static String MOTOR_NAME = "intake";
     public static boolean REVERSED = true;
@@ -25,11 +25,11 @@ public class IntakeAuto {
     private final DcMotorEx intake;
     private State state = State.IDLE;
 
-    public IntakeAuto(HardwareMap hardwareMap) {
+    public Intake(HardwareMap hardwareMap) {
         this(hardwareMap, MOTOR_NAME);
     }
 
-    public IntakeAuto(HardwareMap hardwareMap, String motorName) {
+    public Intake(HardwareMap hardwareMap, String motorName) {
         intake = hardwareMap.get(DcMotorEx.class, motorName);
         intake.setDirection(REVERSED ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

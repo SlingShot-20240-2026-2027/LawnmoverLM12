@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsystems;
+package org.firstinspires.ftc.teamcode.Subsystems;
 
 import static com.pedropathing.ivy.commands.Commands.instant;
 
@@ -7,12 +7,12 @@ import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
-public class GateAuto {
+public class Gate {
 
     public enum State {CLOSED, OPEN};
     private final Servo gate;
     private State state = State.CLOSED;
-    public GateAuto(HardwareMap hardwareMap){
+    public Gate(HardwareMap hardwareMap){
         gate = hardwareMap.get(Servo.class, "gate");
     }
 

@@ -16,20 +16,25 @@ import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.subsystems.IntakeAuto;
-import org.firstinspires.ftc.teamcode.subsystems.ShooterAuto;
-import org.firstinspires.ftc.teamcode.subsystems.TransferAuto;
-import org.firstinspires.ftc.teamcode.subsystems.GateAuto;
+import org.firstinspires.ftc.teamcode.Subsystems.Intake;
+import org.firstinspires.ftc.teamcode.Subsystems.Transfer;
+import org.firstinspires.ftc.teamcode.Subsystems.Shooter;
+import org.firstinspires.ftc.teamcode.Subsystems.Hood;
+import org.firstinspires.ftc.teamcode.Subsystems.Gate;
+import org.firstinspires.ftc.teamcode.Subsystems.Ramp;
 
 
-@Autonomous(name = "SoloAuto1Tip", group = "Autonomous")
+@Autonomous(name = "Auton1Tip", group = "Autonomous")
 public class Auton1Tip extends LinearOpMode {
 
     private Follower follower;
-    private ShooterAuto shooter;
-    private TransferAuto transfer;
-    private IntakeAuto intake;
-    private GateAuto gate;
+    private Intake intake;
+    private Transfer transfer;
+    private Shooter shooter;
+    private Transfer hood;
+    private Gate gate;
+    private Ramp ramp;
+
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
@@ -68,10 +73,12 @@ public class Auton1Tip extends LinearOpMode {
     public void runOpMode() {
         Scheduler.reset();
         follower = Constants.create(hardwareMap);
-        shooter = new ShooterAuto(hardwareMap);
-        transfer = new TransferAuto(hardwareMap);
-        intake = new IntakeAuto(hardwareMap);
-        gate = new GateAuto(hardwareMap);
+        intake = new Intake(hardwareMap);
+        transfer = new Transfer(hardwareMap);
+        shooter = new Shooter(hardwareMap);
+//        hood = new Hood(hardwareMap);
+        gate = new Gate(hardwareMap);
+        ramp = new Ramp(hardwareMap);
         follower.setPose(start);
         follower.update();
 
