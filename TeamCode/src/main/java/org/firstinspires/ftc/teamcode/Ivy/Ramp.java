@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Subsystems;
+package org.firstinspires.ftc.teamcode.Ivy;
 
 import static com.pedropathing.ivy.commands.Commands.instant;
 
@@ -7,24 +7,28 @@ import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.RobotConstants;
+
 public class Ramp {
     public enum State {UP, DEPLOY};
     private final Servo ramp;
     private State state = State.UP;
-    public Ramp(HardwareMap hardwareMap){ramp = hardwareMap.get(Servo.class, "3");}
+    public Ramp(HardwareMap hardwareMap){ramp = hardwareMap.get(Servo.class, RobotConstants.DEPLOY_NAME);}
 
     public void setState (State newState){
         state = newState;
         switch (newState){
             case UP:
-                // Change servo positions once bot is done
-                ramp.setPosition(0);
+                ramp.setPosition(RobotConstants.DEPLOY_UP);
                 break;
             case DEPLOY:
-                ramp.setPosition(0.5);
+                ramp.setPosition(RobotConstants.DEPLOY_DOWN);
                 break;
-
         }
+    }
+
+    public State getState() {
+        return state;
     }
 
     public Command up(){return instant(() -> setState(State.UP)).requiring(this);}

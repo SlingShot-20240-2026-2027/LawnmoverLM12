@@ -1,8 +1,7 @@
-package org.firstinspires.ftc.teamcode.Subsystems;
+package org.firstinspires.ftc.teamcode.Ivy;
 
 import static com.pedropathing.ivy.commands.Commands.instant;
 
-import com.acmerobotics.dashboard.config.Config;
 import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -11,14 +10,9 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.RobotConstants;
 
-@Config
 public class Intake {
-
-    public static String MOTOR_NAME = "intake";
-    public static boolean REVERSED = true;
-    public static double INTAKE_POWER = 1.0;
-    public static double OUTTAKE_POWER = 1.0;
 
     public enum State {INTAKE, OUTTAKE, IDLE}
 
@@ -26,12 +20,12 @@ public class Intake {
     private State state = State.IDLE;
 
     public Intake(HardwareMap hardwareMap) {
-        this(hardwareMap, MOTOR_NAME);
+        this(hardwareMap, RobotConstants.INTAKE_NAME);
     }
 
     public Intake(HardwareMap hardwareMap, String motorName) {
         intake = hardwareMap.get(DcMotorEx.class, motorName);
-        intake.setDirection(REVERSED ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
+        intake.setDirection(RobotConstants.INTAKE_REVERSED ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intake.setPower(0);
@@ -52,10 +46,10 @@ public class Intake {
     private void applyPower() {
         switch (state) {
             case INTAKE:
-                intake.setPower(Range.clip(Math.abs(INTAKE_POWER), 0.0, 1.0));
+                intake.setPower(Range.clip(Math.abs(RobotConstants.INTAKE_POWER), 0.0, 1.0));
                 break;
             case OUTTAKE:
-                intake.setPower(-Range.clip(Math.abs(OUTTAKE_POWER), 0.0, 1.0));
+                intake.setPower(-Range.clip(Math.abs(RobotConstants.OUTTAKE_POWER), 0.0, 1.0));
                 break;
             case IDLE:
             default:

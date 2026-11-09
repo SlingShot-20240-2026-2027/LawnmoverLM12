@@ -1,31 +1,19 @@
-package org.firstinspires.ftc.teamcode.Subsystems;
+package org.firstinspires.ftc.teamcode.Ivy;
 
 import static com.pedropathing.ivy.commands.Commands.instant;
 
-import com.acmerobotics.dashboard.config.Config;
 import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.RobotConstants;
 
-@Config
 public class Shooter {
-
-    public static String FLYWHEEL1_NAME = "flywheel1";
-    public static String FLYWHEEL2_NAME = "flywheel2";
-
-    public static double FLYWHEEL_VELOCITY = 1350;
-
-    public static double FLYWHEEL_P = 0.0;
-    public static double FLYWHEEL_I = 0.0;
-    public static double FLYWHEEL_D = 0.0;
-    public static double FLYWHEEL_F = 14.0;
-
-    public static double READY_TOLERANCE = 30;
 
     private final DcMotorEx flywheel1;
     private final DcMotorEx flywheel2;
@@ -34,11 +22,11 @@ public class Shooter {
     private double targetVelocity = 0;
 
     public Shooter(HardwareMap hardwareMap) {
-        flywheel1 = hardwareMap.get(DcMotorEx.class, FLYWHEEL1_NAME);
-        flywheel2 = hardwareMap.get(DcMotorEx.class, FLYWHEEL2_NAME);
+        flywheel1 = hardwareMap.get(DcMotorEx.class, RobotConstants.FLYWHEEL1_NAME);
+        flywheel2 = hardwareMap.get(DcMotorEx.class, RobotConstants.FLYWHEEL2_NAME);
 
-        flywheel1.setDirection(DcMotorEx.Direction.REVERSE);
-        flywheel2.setDirection(DcMotorEx.Direction.REVERSE);
+        flywheel1.setDirection(RobotConstants.FLYWHEEL1_REVERSED ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
+        flywheel2.setDirection(RobotConstants.FLYWHEEL2_REVERSED ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
         flywheel1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         flywheel2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
@@ -46,7 +34,7 @@ public class Shooter {
     }
 
     public Command on() {
-        return instant(() -> spin(FLYWHEEL_VELOCITY)).requiring(this);
+        return instant(() -> spin(RobotConstants.FLYWHEEL_VELOCITY)).requiring(this);
     }
 
     public Command on(double velocity) {
@@ -75,7 +63,9 @@ public class Shooter {
             return;
         }
         if (!on) {
-            PIDFCoefficients pidf = new PIDFCoefficients(FLYWHEEL_P, FLYWHEEL_I, FLYWHEEL_D, FLYWHEEL_F);
+            PIDFCoefficients pidf = new PIDFCoefficients(
+                    RobotConstants.FLYWHEEL_P, RobotConstants.FLYWHEEL_I,
+                    RobotConstants.FLYWHEEL_D, RobotConstants.FLYWHEEL_F);
             flywheel1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             flywheel2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             flywheel1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
@@ -101,9 +91,10 @@ public class Shooter {
     }
 
     public boolean isReady() {
+        double tolerance = RobotConstants.FLYWHEEL_READY_TOLERANCE;
         return on
-                && Math.abs(flywheel1.getVelocity() - targetVelocity) <= READY_TOLERANCE
-                && Math.abs(flywheel2.getVelocity() - targetVelocity) <= READY_TOLERANCE;
+                && Math.abs(flywheel1.getVelocity() - targetVelocity) <= tolerance
+                && Math.abs(flywheel2.getVelocity() - targetVelocity) <= tolerance;
     }
 
     public boolean isOn() {

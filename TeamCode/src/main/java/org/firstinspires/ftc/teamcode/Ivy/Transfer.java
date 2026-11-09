@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Subsystems;
+package org.firstinspires.ftc.teamcode.Ivy;
 
 import static com.pedropathing.ivy.commands.Commands.instant;
 
@@ -8,6 +8,9 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.teamcode.RobotConstants;
 
 public class Transfer {
 
@@ -16,24 +19,25 @@ public class Transfer {
     private State state = State.IDLE;
 
     public Transfer(HardwareMap hardwareMap) {
-        this(hardwareMap, "transfer");
+        this(hardwareMap, RobotConstants.TRANSFER_NAME);
     }
 
     public Transfer(HardwareMap hardwareMap, String name) {
         transfer = hardwareMap.get(DcMotorEx.class, name);
-        transfer.setDirection(DcMotorSimple.Direction.REVERSE);
+        transfer.setDirection(RobotConstants.TRANSFER_REVERSED ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
         transfer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        transfer.setPower(0);
     }
 
     public void setState(State newState) {
         state = newState;
         switch (newState) {
             case TRANSFER:
-                transfer.setPower(1.0);
+                transfer.setPower(Range.clip(Math.abs(RobotConstants.TRANSFER_POWER), 0.0, 1.0));
                 break;
             case REVERSE:
-                transfer.setPower(-1.0);
+                transfer.setPower(-Range.clip(Math.abs(RobotConstants.TRANSFER_REVERSE_POWER), 0.0, 1.0));
                 break;
             case IDLE:
             default:

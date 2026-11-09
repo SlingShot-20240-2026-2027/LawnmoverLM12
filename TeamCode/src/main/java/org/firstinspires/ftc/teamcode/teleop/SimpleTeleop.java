@@ -4,10 +4,11 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.teamcode.RobotConstants;
 
 @TeleOp(name = "SimpleTeleOp")
 public class SimpleTeleop extends OpMode {
@@ -20,109 +21,72 @@ public class SimpleTeleop extends OpMode {
 
     /** Shooter Flywheels **/
     private DcMotorEx flywheel1, flywheel2;
-    public static final double FLYWHEEL_VELOCITY = 1150;      // ticks per second (shooting)
-    public static final double FLYWHEEL_IDLE_VELOCITY = 1150; // ticks per second (idle)
-
-    // Velocity PIDF. Set F = 32767 / maxTicksPerSec (measure max at full power), then tune P.
-    public static final double FLYWHEEL_P = 1.0;
-    public static final double FLYWHEEL_I = 0.0;
-    public static final double FLYWHEEL_D = 0.01;
-    public static final double FLYWHEEL_F = 17.6;
 
     /** Gate **/
     private Servo gate;
-    public static final double GATE_OUT = 0.66; // resting position (outward)
-    public static final double GATE_IN  = 0.4;  // shooting position (inward)
 
     /** Hood **/
     private Servo hood;
-    public static final double HOOD_POSITION = 0.4; // fixed hood position
 
-    /** Deployable (toggle) **/
+    /** Deployable **/
     private Servo deployable;
-    public static final double DEPLOY_UP   = 0.0; // tune
-    public static final double DEPLOY_DOWN = 1; // tune
-    private boolean deployed = false;
-    private boolean lastLeftBumper = false;
-
-    /** RGB Indicator Light **/
-//    private Servo light;
-//    public static final double LIGHT_OFF   = 0.0;
-//    public static final double LIGHT_GREEN = 0.5;
-
-    /** Color Sensor (full-intake detection) **/
-//    private NormalizedColorSensor colorSensor;
-//    private final ElapsedTime yellowTimer = new ElapsedTime();
-//    private boolean yellowWasSeen = false;
-//    public static final double YELLOW_HUE_MIN = 40;   // tune with telemetry
-//    public static final double YELLOW_HUE_MAX = 80;   // tune with telemetry
-//    public static final double YELLOW_TIME_SEC = 1.0;
 
     @Override
     public void init() {
         /** Mec Init **/
-        leftFront  = hardwareMap.get(DcMotor.class, "fl");
-        rightFront = hardwareMap.get(DcMotor.class, "fr");
-        leftBack   = hardwareMap.get(DcMotor.class, "bl");
-        rightBack  = hardwareMap.get(DcMotor.class, "br");
+        leftFront  = hardwareMap.get(DcMotor.class, RobotConstants.FRONT_LEFT_NAME);
+        rightFront = hardwareMap.get(DcMotor.class, RobotConstants.FRONT_RIGHT_NAME);
+        leftBack   = hardwareMap.get(DcMotor.class, RobotConstants.BACK_LEFT_NAME);
+        rightBack  = hardwareMap.get(DcMotor.class, RobotConstants.BACK_RIGHT_NAME);
 
-        rightFront.setDirection(DcMotor.Direction.REVERSE);
-        rightBack.setDirection(DcMotor.Direction.REVERSE);
+        leftFront.setDirection(direction(RobotConstants.LEFT_DRIVE_REVERSED));
+        leftBack.setDirection(direction(RobotConstants.LEFT_DRIVE_REVERSED));
+        rightFront.setDirection(direction(RobotConstants.RIGHT_DRIVE_REVERSED));
+        rightBack.setDirection(direction(RobotConstants.RIGHT_DRIVE_REVERSED));
 
         /** Intake / Transfer Init **/
-        intake   = hardwareMap.get(DcMotor.class, "intake");
-        transfer = hardwareMap.get(DcMotor.class, "transfer");
+        intake   = hardwareMap.get(DcMotor.class, RobotConstants.INTAKE_NAME);
+        transfer = hardwareMap.get(DcMotor.class, RobotConstants.TRANSFER_NAME);
 
-        // Must come AFTER the hardwareMap.get calls above
-        intake.setDirection(DcMotor.Direction.REVERSE);
-        transfer.setDirection(DcMotor.Direction.REVERSE);
+        intake.setDirection(direction(RobotConstants.INTAKE_REVERSED));
+        transfer.setDirection(direction(RobotConstants.TRANSFER_REVERSED));
 
         /** Flywheel Init **/
-        flywheel1 = hardwareMap.get(DcMotorEx.class, "flywheel1");
-        flywheel2 = hardwareMap.get(DcMotorEx.class, "flywheel2");
+        flywheel1 = hardwareMap.get(DcMotorEx.class, RobotConstants.FLYWHEEL1_NAME);
+        flywheel2 = hardwareMap.get(DcMotorEx.class, RobotConstants.FLYWHEEL2_NAME);
 
-        // Both reversed = both spin the same way. Reverse only one if they're mounted mirrored.
-        flywheel1.setDirection(DcMotorEx.Direction.REVERSE);
-        flywheel2.setDirection(DcMotorEx.Direction.REVERSE);
+        flywheel1.setDirection(direction(RobotConstants.FLYWHEEL1_REVERSED));
+        flywheel2.setDirection(direction(RobotConstants.FLYWHEEL2_REVERSED));
 
         flywheel1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         flywheel2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        // Apply the same PIDF to BOTH flywheels
         PIDFCoefficients pidf = new PIDFCoefficients(
-                FLYWHEEL_P, FLYWHEEL_I, FLYWHEEL_D, FLYWHEEL_F);
+                RobotConstants.FLYWHEEL_P, RobotConstants.FLYWHEEL_I,
+                RobotConstants.FLYWHEEL_D, RobotConstants.FLYWHEEL_F);
         flywheel1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
         flywheel2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
 
         /** Gate Init **/
-        gate = hardwareMap.get(Servo.class, "gate");
-        gate.setPosition(GATE_OUT);
+        gate = hardwareMap.get(Servo.class, RobotConstants.GATE_NAME);
+        gate.setPosition(RobotConstants.GATE_CLOSED);
 
         /** Hood Init **/
-        hood = hardwareMap.get(Servo.class, "hood");
-        hood.setPosition(HOOD_POSITION);
+        hood = hardwareMap.get(Servo.class, RobotConstants.HOOD_NAME);
+        hood.setPosition(RobotConstants.HOOD_UP);
 
         /** Deployable Init **/
-        deployable = hardwareMap.get(Servo.class, "3");
-        deployable.setPosition(DEPLOY_UP);
-
-        /** Color Init **/
-//        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "revColorV3");
-//        colorSensor.setGain(11);
-
-        /** Light Init **/
-//        light = hardwareMap.get(Servo.class, "light");
-//        light.setPosition(LIGHT_OFF);
+        deployable = hardwareMap.get(Servo.class, RobotConstants.DEPLOY_NAME);
+        deployable.setPosition(RobotConstants.DEPLOY_UP);
     }
 
     @Override
     public void loop() {
-        /** ---------------- Mecanum (diamond / O pattern) ---------------- **/
+        /** ---------------- Mecanum ---------------- **/
         double drive  = -gamepad1.left_stick_y;
         double strafe =  -gamepad1.left_stick_x;
         double turn   =  gamepad1.right_stick_x;
 
-        // Strafe signs are flipped vs. an X-pattern drivetrain
         double leftFrontPower  = drive - strafe + turn;
         double rightFrontPower = drive + strafe - turn;
         double leftBackPower   = drive + strafe + turn;
@@ -145,47 +109,34 @@ public class SimpleTeleop extends OpMode {
         leftBack.setPower(leftBackPower);
         rightBack.setPower(rightBackPower);
 
-        // Hood held at a fixed position (0.7)
-        hood.setPosition(HOOD_POSITION);
+        /** Hood held at a fixed position **/
+        hood.setPosition(RobotConstants.HOOD_UP);
 
         /** ---------------- Intake (right bumper) & Transfer (always on) ---------------- **/
-        intake.setPower(gamepad1.right_bumper ? 1.0 : 0);
+        intake.setPower(gamepad1.right_bumper ? RobotConstants.INTAKE_POWER : 0);
 
-        if(gamepad1.left_trigger >0.5){
-            transfer.setPower(-1);
+        if (gamepad1.left_trigger > 0.5) {
+            transfer.setPower(-RobotConstants.TRANSFER_REVERSE_POWER);
+        } else {
+            transfer.setPower(RobotConstants.TRANSFER_POWER);
         }
-        else{
-            transfer.setPower(1);
-        }
-
-
-
-
-
 
         /** ---------------- Shooter Flywheels & Gate ---------------- **/
-        if (gamepad1.right_trigger > 0.5) {
-            flywheel1.setVelocity(FLYWHEEL_VELOCITY);
-            flywheel2.setVelocity(FLYWHEEL_VELOCITY);
-            gate.setPosition(GATE_IN);
-        } else {
-            flywheel1.setVelocity(FLYWHEEL_IDLE_VELOCITY);
-            flywheel2.setVelocity(FLYWHEEL_IDLE_VELOCITY);
-            gate.setPosition(GATE_OUT);
-        }
+        flywheel1.setVelocity(RobotConstants.FLYWHEEL_VELOCITY);
+        flywheel2.setVelocity(RobotConstants.FLYWHEEL_VELOCITY);
+        gate.setPosition(gamepad1.right_trigger > 0.5 ? RobotConstants.GATE_OPEN : RobotConstants.GATE_CLOSED);
 
-        /** ---------------- Deployable (left bumper toggles down/up) ---------------- **/
-        if (gamepad1.left_bumper ) {
-            deployable.setPosition(DEPLOY_DOWN);
-        }else{
-            deployable.setPosition(DEPLOY_UP);
-        }
-
-
-
+        /** ---------------- Deployable (hold left bumper) ---------------- **/
+        boolean deployed = gamepad1.left_bumper;
+        deployable.setPosition(deployed ? RobotConstants.DEPLOY_DOWN : RobotConstants.DEPLOY_UP);
 
         telemetry.addData("Deployed", deployed);
+        telemetry.addData("Flywheel target", RobotConstants.FLYWHEEL_VELOCITY);
         telemetry.addData("Flywheel 1 vel", flywheel1.getVelocity());
         telemetry.addData("Flywheel 2 vel", flywheel2.getVelocity());
+    }
+
+    private static DcMotorSimple.Direction direction(boolean reversed) {
+        return reversed ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD;
     }
 }
