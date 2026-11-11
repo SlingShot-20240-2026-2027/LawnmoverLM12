@@ -16,12 +16,12 @@ import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.Subsystems.Intake;
-import org.firstinspires.ftc.teamcode.Subsystems.Transfer;
-import org.firstinspires.ftc.teamcode.Subsystems.Shooter;
-import org.firstinspires.ftc.teamcode.Subsystems.Hood;
-import org.firstinspires.ftc.teamcode.Subsystems.Gate;
-import org.firstinspires.ftc.teamcode.Subsystems.Ramp;
+import org.firstinspires.ftc.teamcode.Ivy.Hood;
+import org.firstinspires.ftc.teamcode.Ivy.Intake;
+import org.firstinspires.ftc.teamcode.Ivy.Transfer;
+import org.firstinspires.ftc.teamcode.Ivy.Shooter;
+import org.firstinspires.ftc.teamcode.Ivy.Gate;
+import org.firstinspires.ftc.teamcode.Ivy.Ramp;
 
 
 @Autonomous(name = "Auton1Tip", group = "Autonomous")
@@ -31,7 +31,7 @@ public class Auton1Tip extends LinearOpMode {
     private Intake intake;
     private Transfer transfer;
     private Shooter shooter;
-    private Transfer hood;
+    private Hood hood;
     private Gate gate;
     private Ramp ramp;
 
