@@ -41,7 +41,7 @@ public class LM2Tele extends LinearOpMode {
     private Ramp ramp;
     private PinpointLocalizer localizer;
     private double poseX, poseY, poseHeading;
-    private Turret turret;
+//    private Turret turret;
 
     private final Gamepad g1 = new Gamepad();
     private final Gamepad g1Prev = new Gamepad();
@@ -81,7 +81,7 @@ public class LM2Tele extends LinearOpMode {
         hood = new Hood(hardwareMap);
         gate = new Gate(hardwareMap);
         ramp = new Ramp(hardwareMap);
-        turret = new Turret(hardwareMap);
+//        turret = new Turret(hardwareMap);
         localizer = new PinpointLocalizer(hardwareMap, Constants.localizerConfig);
 
         setGate(Gate.State.CLOSED);
@@ -110,7 +110,7 @@ public class LM2Tele extends LinearOpMode {
             updatePose();
             drive();
             buttons();
-            turret.update(poseX, poseY, poseHeading);
+//            turret.update(poseX, poseY, poseHeading);
             applyMechanisms();
             readyRumble();
             addTelemetry();
@@ -172,28 +172,28 @@ public class LM2Tele extends LinearOpMode {
             ramp.setState(deployed ? Ramp.State.DEPLOY : Ramp.State.UP);
             gamepad1.rumbleBlips(deployed ? 2 : 1);
         }
-        if (pressed(g1.y, g1Prev.y)) {
-            turret.toggleMode();
-            gamepad1.rumbleBlips(turret.getMode() == Turret.Mode.AUTO_AIM ? 2 : 1);
-        }
-        if (pressed(g1.b, g1Prev.b)) {
-            turret.toggleTarget();
-            gamepad1.rumbleBlips(turret.getTarget() == Turret.Target.TARGET_1 ? 1 : 2);
-        }
-        if (pressed(g1.dpad_left, g1Prev.dpad_left)) {
-            turret.addTrim(TurretConstants.AIM_TRIM_STEP_DEG);
-        }
-        if (pressed(g1.dpad_right, g1Prev.dpad_right)) {
-            turret.addTrim(-TurretConstants.AIM_TRIM_STEP_DEG);
-        }
-        if (pressed(g1.a, g1Prev.a)) {
-            turret.resetTrim();
-            gamepad1.rumbleBlips(1);
-        }
-        if (pressed(g1.back, g1Prev.back)) {
-            setPose(TurretConstants.RELOCALIZE_X, TurretConstants.RELOCALIZE_Y, TurretConstants.RELOCALIZE_HEADING_DEG);
-            gamepad1.rumble(300);
-        }
+//        if (pressed(g1.y, g1Prev.y)) {
+//            turret.toggleMode();
+//            gamepad1.rumbleBlips(turret.getMode() == Turret.Mode.AUTO_AIM ? 2 : 1);
+//        }
+//        if (pressed(g1.b, g1Prev.b)) {
+//            turret.toggleTarget();
+//            gamepad1.rumbleBlips(turret.getTarget() == Turret.Target.TARGET_1 ? 1 : 2);
+//        }
+//        if (pressed(g1.dpad_left, g1Prev.dpad_left)) {
+//            turret.addTrim(TurretConstants.AIM_TRIM_STEP_DEG);
+//        }
+//        if (pressed(g1.dpad_right, g1Prev.dpad_right)) {
+//            turret.addTrim(-TurretConstants.AIM_TRIM_STEP_DEG);
+//        }
+//        if (pressed(g1.a, g1Prev.a)) {
+//            turret.resetTrim();
+//            gamepad1.rumbleBlips(1);
+//        }
+//        if (pressed(g1.back, g1Prev.back)) {
+//            setPose(TurretConstants.RELOCALIZE_X, TurretConstants.RELOCALIZE_Y, TurretConstants.RELOCALIZE_HEADING_DEG);
+//            gamepad1.rumble(300);
+//        }
         shooting = flywheelOn && g1.right_trigger > TRIGGER_THRESHOLD;
     }
 
@@ -286,7 +286,7 @@ public class LM2Tele extends LinearOpMode {
         telemetry.addLine("RT shoot | RB intake on/off | LB unjam | LT slow");
         telemetry.addLine("D-pad up/down hood | X deployable down/up");
         telemetry.addLine("Y turret auto/manual | B target 1/2 | D-pad L/R aim trim | A reset trim | BACK reset pose");
-        turret.addTelemetry(telemetry);
+//        turret.addTelemetry(telemetry);
         telemetry.addData("Pose", "x %.1f  y %.1f  h %.1f", poseX, poseY, Math.toDegrees(poseHeading));
         shooter.addTelemetry(telemetry);
         telemetry.update();

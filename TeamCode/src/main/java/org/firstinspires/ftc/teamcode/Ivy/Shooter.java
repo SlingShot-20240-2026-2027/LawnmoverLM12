@@ -63,18 +63,28 @@ public class Shooter {
             return;
         }
         if (!on) {
-            PIDFCoefficients pidf = new PIDFCoefficients(
-                    RobotConstants.FLYWHEEL_P, RobotConstants.FLYWHEEL_I,
-                    RobotConstants.FLYWHEEL_D, RobotConstants.FLYWHEEL_F);
             flywheel1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             flywheel2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            flywheel1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
-            flywheel2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
+            applyPIDF();
             on = true;
         }
         targetVelocity = velocity;
         flywheel1.setVelocity(velocity);
         flywheel2.setVelocity(velocity);
+    }
+
+    public void refreshPIDF() {
+        if (on) {
+            applyPIDF();
+        }
+    }
+
+    private void applyPIDF() {
+        PIDFCoefficients pidf = new PIDFCoefficients(
+                RobotConstants.FLYWHEEL_P, RobotConstants.FLYWHEEL_I,
+                RobotConstants.FLYWHEEL_D, RobotConstants.FLYWHEEL_F);
+        flywheel1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
+        flywheel2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
     }
 
     public void stop() {
@@ -99,6 +109,14 @@ public class Shooter {
 
     public boolean isOn() {
         return on;
+    }
+
+    public double getVelocity1() {
+        return flywheel1.getVelocity();
+    }
+
+    public double getVelocity2() {
+        return flywheel2.getVelocity();
     }
 
     public double getTargetVelocity() {

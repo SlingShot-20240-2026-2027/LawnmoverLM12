@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.acmerobotics.dashboard.config.Config; 
+import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class RobotConstants {
@@ -26,7 +26,7 @@ public class RobotConstants {
     public static String FLYWHEEL2_NAME = "flywheel2";
     public static boolean FLYWHEEL1_REVERSED = true;
     public static boolean FLYWHEEL2_REVERSED = true;
-    public static double FLYWHEEL_VELOCITY = 1350;
+    public static double FLYWHEEL_VELOCITY = 0;
     public static double FLYWHEEL_P = 0.0;
     public static double FLYWHEEL_I = 0.0;
     public static double FLYWHEEL_D = 0.0;
@@ -41,12 +41,13 @@ public class RobotConstants {
     public static double GATE_CLOSED = 0.7;
     public static double GATE_OPEN = 0.4;
 
-    public static String DEPLOY_NAME = "3";
+    public static String DEPLOY_NAME = "deployable";
     public static double DEPLOY_UP = 0.0;
     public static double DEPLOY_DOWN = 1.0;
 
     public static String IMU_NAME = "imu";
 
     private RobotConstants() {
+
     }
 }
