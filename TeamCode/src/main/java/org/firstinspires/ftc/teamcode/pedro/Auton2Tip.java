@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedro;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.pedropathing.api.Paths;
 
 import com.pedropathing.api.PoseFactory;
@@ -22,12 +23,24 @@ import org.firstinspires.ftc.teamcode.Ivy.Transfer;
 import org.firstinspires.ftc.teamcode.Ivy.Shooter;
 import org.firstinspires.ftc.teamcode.Ivy.Gate;
 import org.firstinspires.ftc.teamcode.Ivy.Ramp;
+import org.firstinspires.ftc.teamcode.RobotConstants;
 
 
-@Autonomous(name = "", group = "Autonomous")
+@Config
+@Autonomous(name = "Auton2Tip", group = "Autonomous")
 public class Auton2Tip extends LinearOpMode {
 
+    public static double AUTO_SHOT_VELOCITY = 1350;
+    public static long SPINUP_TIMEOUT_MS = 3000;
+    public static long READY_TIMEOUT_MS = 1000;
+
     private Follower follower;
+    private Intake intake;
+    private Transfer transfer;
+    private Shooter shooter;
+    private Hood hood;
+    private Gate gate;
+    private Ramp ramp;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
@@ -51,16 +64,54 @@ public class Auton2Tip extends LinearOpMode {
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
-                follow(follower, move1())
-//                follow(follower, intake1()),
-//                follow(follower, move2()),
-//                follow(follower, move3()),
-//                follow(follower, shooter2()),
-//                follow(follower, move4()),
-//                follow(follower, intake2()),
-//                follow(follower, move5()),
-//                follow(follower, shooter3()),
-//                follow(follower, park())
+                parallel(
+                        ramp.up(),
+                        shooter.on(shotVelocity()),
+                        intake.in(),
+                        transfer.transfer(),
+                        gate.cl(),
+                        hood.up()
+                ),
+                shooter.waitUntilReady(SPINUP_TIMEOUT_MS),
+                gate.op(),
+                waitMs(1500),
+                gate.cl(),
+                follow(follower, move1()),
+                ramp.deploy(),
+                waitMs(1000),
+                follow(follower, intake1()),
+                waitMs(1500),
+                follow(follower, move2()),
+                ramp.up(),
+                waitMs(1000),
+                follow(follower, move3()),
+                waitMs(500),
+                follow(follower, shooter2()),
+                shooter.waitUntilReady(READY_TIMEOUT_MS),
+                gate.op(),
+                waitMs(1500),
+                gate.cl(),
+                follow(follower, move4()),
+                ramp.deploy(),
+                waitMs(1000),
+                follow(follower, intake2()),
+                waitMs(1500),
+                ramp.up(),
+                waitMs(1000),
+                follow(follower, move5()),
+                follow(follower, shooter3()),
+                shooter.waitUntilReady(READY_TIMEOUT_MS),
+                gate.op(),
+                waitMs(1500),
+                gate.cl(),
+                follow(follower, park()),
+                parallel(
+                        shooter.idle(),
+                        intake.idle(),
+                        transfer.idle(),
+                        gate.cl(),
+                        hood.down()
+                )
         );
     }
 
@@ -68,15 +119,24 @@ public class Auton2Tip extends LinearOpMode {
     public void runOpMode() {
         Scheduler.reset();
         follower = Constants.create(hardwareMap);
+        intake = new Intake(hardwareMap);
+        transfer = new Transfer(hardwareMap);
+        shooter = new Shooter(hardwareMap);
+        gate = new Gate(hardwareMap);
+        ramp = new Ramp(hardwareMap);
+        hood = new Hood(hardwareMap);
         follower.setPose(start);
         follower.update();
 
         waitForStart();
+        schedule(shooter.periodic());
         schedule(autoRoutine());
 
         while (opModeIsActive()) {
             follower.update();
             Scheduler.execute();
+
+            shooter.addTelemetry(telemetry);
 
             telemetry.addData("x", follower.pose().x());
             telemetry.addData("y", follower.pose().y());
@@ -89,6 +149,10 @@ public class Auton2Tip extends LinearOpMode {
 
             telemetry.update();
         }
+    }
+
+    private double shotVelocity() {
+        return RobotConstants.FLYWHEEL_VELOCITY > 0 ? RobotConstants.FLYWHEEL_VELOCITY : AUTO_SHOT_VELOCITY;
     }
 
     public Path move1() {

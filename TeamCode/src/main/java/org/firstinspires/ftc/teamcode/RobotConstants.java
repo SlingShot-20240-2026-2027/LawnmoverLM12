@@ -4,7 +4,6 @@ import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class RobotConstants {
-
     public static String FRONT_LEFT_NAME = "fl";
     public static String FRONT_RIGHT_NAME = "fr";
     public static String BACK_LEFT_NAME = "bl";
@@ -26,15 +25,15 @@ public class RobotConstants {
     public static String FLYWHEEL2_NAME = "flywheel2";
     public static boolean FLYWHEEL1_REVERSED = true;
     public static boolean FLYWHEEL2_REVERSED = true;
-    public static double FLYWHEEL_VELOCITY = 0;
-    public static double FLYWHEEL_P = 0.0;
+    public static double FLYWHEEL_VELOCITY = 1350;
+    public static double FLYWHEEL_P = 65.0;
     public static double FLYWHEEL_I = 0.0;
     public static double FLYWHEEL_D = 0.0;
-    public static double FLYWHEEL_F = 14.0;
+    public static double FLYWHEEL_F = 13.0;
     public static double FLYWHEEL_READY_TOLERANCE = 30;
 
     public static String HOOD_NAME = "hood";
-    public static double HOOD_UP = 0.43;
+    public static double HOOD_UP = 0.45;
     public static double HOOD_DOWN = 0.0;
 
     public static String GATE_NAME = "gate";
