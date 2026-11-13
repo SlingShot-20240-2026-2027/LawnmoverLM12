@@ -12,14 +12,17 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.Ivy.Gate;
 import org.firstinspires.ftc.teamcode.Ivy.Hood;
+import org.firstinspires.ftc.teamcode.Ivy.HoodRegression;
 import org.firstinspires.ftc.teamcode.Ivy.Intake;
 import org.firstinspires.ftc.teamcode.Ivy.Ramp;
 import org.firstinspires.ftc.teamcode.Ivy.Shooter;
 import org.firstinspires.ftc.teamcode.Ivy.Transfer;
-import org.firstinspires.ftc.teamcode.Ivy.Turret;
+import org.firstinspires.ftc.teamcode.Ivy.VelocityRegression;
 import org.firstinspires.ftc.teamcode.RobotConstants;
 import org.firstinspires.ftc.teamcode.TurretConstants;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+
+import java.util.Locale;
 
 @Config
 @TeleOp(name = "LM2Tele", group = "TeleOp")
@@ -28,9 +31,14 @@ public class LM2Tele extends LinearOpMode {
     public static double DEADBAND = 0.05;
     public static double SLOW_SPEED = 0.35;
     public static double TRIGGER_THRESHOLD = 0.3;
-    public static double VELOCITY_TRIM_STEP = 25;
-    public static double MIN_VELOCITY = 600;
-    public static double MAX_VELOCITY = 2000;
+    public static double VELOCITY_UPDATE_TPS = 10;
+    public static double MANUAL_DISTANCE_IN = 60;
+    public static double SHOOTER_OFFSET_FORWARD_IN = 0;
+    public static double SHOOTER_OFFSET_LEFT_IN = 0;
+    public static double SHOOTER_FACING_DEG = 0;
+    public static double AIM_TOLERANCE_DEG = 3;
+
+    private enum Target {TARGET_1, TARGET_2}
 
     private DcMotorEx frontLeft, frontRight, backLeft, backRight;
     private Intake intake;
@@ -40,24 +48,28 @@ public class LM2Tele extends LinearOpMode {
     private Gate gate;
     private Ramp ramp;
     private PinpointLocalizer localizer;
+    private String localizerError = "";
     private double poseX, poseY, poseHeading;
-//    private Turret turret;
 
     private final Gamepad g1 = new Gamepad();
     private final Gamepad g1Prev = new Gamepad();
 
-    private boolean intakeOn = true;
-    private boolean flywheelOn = true;
+    private boolean autoShot = true;
+    private boolean usingDistance = false;
     private boolean shooting = false;
     private boolean wasReady = false;
-    private double velocityTrim = 0;
-    private Hood.State hoodState = Hood.State.UP;
     private boolean deployed = false;
+    private Target target = Target.TARGET_1;
 
     private Intake.State appliedIntake = null;
     private Transfer.State appliedTransfer = null;
     private Gate.State appliedGate = null;
     private double appliedVelocity = Double.NaN;
+
+    private double distanceIn = Double.NaN;
+    private double aimErrorDeg = Double.NaN;
+    private double targetVelocity = 0;
+    private double targetHood = 0;
 
     @Override
     public void runOpMode() {
@@ -81,26 +93,38 @@ public class LM2Tele extends LinearOpMode {
         hood = new Hood(hardwareMap);
         gate = new Gate(hardwareMap);
         ramp = new Ramp(hardwareMap);
-//        turret = new Turret(hardwareMap);
-        localizer = new PinpointLocalizer(hardwareMap, Constants.localizerConfig);
 
         setGate(Gate.State.CLOSED);
-        hood.setState(hoodState);
+        hood.setPosition(HoodRegression.positionFor(MANUAL_DISTANCE_IN));
         ramp.setState(Ramp.State.UP);
 
-        telemetry.addLine("Starting Pinpoint - keep the robot still...");
-        telemetry.update();
-        sleep(Math.max(0, TurretConstants.PINPOINT_SETTLE_MS));
-        if (TurretConstants.RESET_POSE_ON_INIT) {
-            setPose(TurretConstants.START_X, TurretConstants.START_Y, TurretConstants.START_HEADING_DEG);
+        try {
+            localizer = new PinpointLocalizer(hardwareMap, Constants.localizerConfig);
+        } catch (RuntimeException e) {
+            localizer = null;
+            localizerError = e.getClass().getSimpleName();
         }
-        updatePose();
 
-        telemetry.addLine("LM2Tele ready. Press PLAY.");
-        telemetry.addLine("Intake and flywheel start at PLAY.");
-        telemetry.update();
+        if (localizer != null) {
+            telemetry.addLine("Starting Pinpoint - keep the robot still...");
+            telemetry.update();
+            sleep(Math.max(0, TurretConstants.PINPOINT_SETTLE_MS));
+            if (TurretConstants.RESET_POSE_ON_INIT) {
+                setPose(TurretConstants.START_X, TurretConstants.START_Y, TurretConstants.START_HEADING_DEG);
+            }
+        }
 
-        waitForStart();
+        while (opModeInInit()) {
+            updatePose();
+            telemetry.addLine("LM2Tele ready. Press PLAY.");
+            telemetry.addLine("Intake, transfer and flywheel start at PLAY.");
+            telemetry.addData("Pinpoint", localizer != null ? "OK" : "NOT FOUND (" + localizerError + ") - fixed shot only");
+            telemetry.addData("Pose", "x %.1f  y %.1f  h %.1f", poseX, poseY, Math.toDegrees(poseHeading));
+            telemetry.addData("Hood regression", HoodRegression.describe());
+            telemetry.addData("Velocity regression", VelocityRegression.describe());
+            telemetry.update();
+            idle();
+        }
         if (isStopRequested()) return;
 
         while (opModeIsActive()) {
@@ -110,7 +134,8 @@ public class LM2Tele extends LinearOpMode {
             updatePose();
             drive();
             buttons();
-//            turret.update(poseX, poseY, poseHeading);
+            updateAim();
+            applyShot();
             applyMechanisms();
             readyRumble();
             addTelemetry();
@@ -139,90 +164,69 @@ public class LM2Tele extends LinearOpMode {
     }
 
     private void buttons() {
-        if (pressed(g1.right_bumper, g1Prev.right_bumper)) {
-            intakeOn = !intakeOn;
-            gamepad1.rumbleBlips(intakeOn ? 2 : 1);
-        }
-//        if (pressed(g1.y, g1Prev.y)) {
-//            flywheelOn = !flywheelOn;
-//            gamepad1.rumbleBlips(flywheelOn ? 2 : 1);
-//        }
-        if (pressed(g1.dpad_up, g1Prev.dpad_up)) {
-            hoodState = Hood.State.UP;
-            hood.setState(hoodState);
-            gamepad1.rumbleBlips(2);
-        }
-        if (pressed(g1.dpad_down, g1Prev.dpad_down)) {
-            hoodState = Hood.State.DOWN;
-            hood.setState(hoodState);
-            gamepad1.rumbleBlips(1);
-        }
-//        if (pressed(g1.dpad_right, g1Prev.dpad_right)) {
-//            velocityTrim += VELOCITY_TRIM_STEP;
-//        }
-//        if (pressed(g1.dpad_left, g1Prev.dpad_left)) {
-//            velocityTrim -= VELOCITY_TRIM_STEP;
-//        }
-//        if (pressed(g1.a, g1Prev.a)) {
-//            velocityTrim = 0;
-//            gamepad1.rumbleBlips(1);
-//        }
-        if (pressed(g1.x, g1Prev.x)) {
+        if (pressed(g1.left_bumper, g1Prev.left_bumper)) {
             deployed = !deployed;
             ramp.setState(deployed ? Ramp.State.DEPLOY : Ramp.State.UP);
             gamepad1.rumbleBlips(deployed ? 2 : 1);
         }
-//        if (pressed(g1.y, g1Prev.y)) {
-//            turret.toggleMode();
-//            gamepad1.rumbleBlips(turret.getMode() == Turret.Mode.AUTO_AIM ? 2 : 1);
-//        }
-//        if (pressed(g1.b, g1Prev.b)) {
-//            turret.toggleTarget();
-//            gamepad1.rumbleBlips(turret.getTarget() == Turret.Target.TARGET_1 ? 1 : 2);
-//        }
-//        if (pressed(g1.dpad_left, g1Prev.dpad_left)) {
-//            turret.addTrim(TurretConstants.AIM_TRIM_STEP_DEG);
-//        }
-//        if (pressed(g1.dpad_right, g1Prev.dpad_right)) {
-//            turret.addTrim(-TurretConstants.AIM_TRIM_STEP_DEG);
-//        }
-//        if (pressed(g1.a, g1Prev.a)) {
-//            turret.resetTrim();
-//            gamepad1.rumbleBlips(1);
-//        }
-//        if (pressed(g1.back, g1Prev.back)) {
-//            setPose(TurretConstants.RELOCALIZE_X, TurretConstants.RELOCALIZE_Y, TurretConstants.RELOCALIZE_HEADING_DEG);
-//            gamepad1.rumble(300);
-//        }
-        shooting = flywheelOn && g1.right_trigger > TRIGGER_THRESHOLD;
+        if (pressed(g1.y, g1Prev.y)) {
+            autoShot = !autoShot;
+            gamepad1.rumbleBlips(autoShot ? 2 : 1);
+        }
+        if (pressed(g1.b, g1Prev.b)) {
+            target = target == Target.TARGET_1 ? Target.TARGET_2 : Target.TARGET_1;
+            gamepad1.rumbleBlips(target == Target.TARGET_1 ? 1 : 2);
+        }
+        if (pressed(g1.back, g1Prev.back) && localizer != null) {
+            relocalizeInCorner();
+            gamepad1.rumble(300);
+        }
+        shooting = g1.right_trigger > TRIGGER_THRESHOLD;
+    }
+
+    private void updateAim() {
+        if (localizer == null) {
+            distanceIn = Double.NaN;
+            aimErrorDeg = Double.NaN;
+            return;
+        }
+        double c = Math.cos(poseHeading);
+        double s = Math.sin(poseHeading);
+        double sx = poseX + SHOOTER_OFFSET_FORWARD_IN * c - SHOOTER_OFFSET_LEFT_IN * s;
+        double sy = poseY + SHOOTER_OFFSET_FORWARD_IN * s + SHOOTER_OFFSET_LEFT_IN * c;
+        double tx = target == Target.TARGET_1 ? TurretConstants.TARGET1_X : TurretConstants.TARGET2_X;
+        double ty = target == Target.TARGET_1 ? TurretConstants.TARGET1_Y : TurretConstants.TARGET2_Y;
+        double dx = tx - sx;
+        double dy = ty - sy;
+        distanceIn = Math.hypot(dx, dy);
+
+        double shooterHeading = poseHeading + Math.toRadians(SHOOTER_FACING_DEG);
+        aimErrorDeg = Math.toDegrees(wrap(Math.atan2(dy, dx) - shooterHeading));
+    }
+
+    private void applyShot() {
+        usingDistance = autoShot && !Double.isNaN(distanceIn);
+        double shotDistance = usingDistance ? distanceIn : MANUAL_DISTANCE_IN;
+
+        targetVelocity = VelocityRegression.velocityFor(shotDistance);
+        targetHood = HoodRegression.positionFor(shotDistance);
+        hood.setPosition(targetHood);
+
+        if (Double.isNaN(appliedVelocity) || Math.abs(targetVelocity - appliedVelocity) >= VELOCITY_UPDATE_TPS) {
+            shooter.spin(targetVelocity);
+            appliedVelocity = targetVelocity;
+        }
     }
 
     private void applyMechanisms() {
-        boolean unjam = g1.left_bumper;
-
-        double velocity = flywheelOn ? clamp(RobotConstants.FLYWHEEL_VELOCITY + velocityTrim) : 0;
-        if (velocity != appliedVelocity) {
-            if (velocity > 0) {
-                shooter.spin(velocity);
-            } else {
-                shooter.stop();
-            }
-            appliedVelocity = velocity;
-            wasReady = false;
-        }
-
-        if (unjam) {
+        if (g1.dpad_down) {
             setIntake(Intake.State.OUTTAKE);
             setTransfer(Transfer.State.REVERSE);
             setGate(Gate.State.CLOSED);
-        } else if (shooting) {
+        } else {
             setIntake(Intake.State.INTAKE);
             setTransfer(Transfer.State.TRANSFER);
-            setGate(Gate.State.OPEN);
-        } else {
-            setIntake(intakeOn ? Intake.State.INTAKE : Intake.State.IDLE);
-            setTransfer(Transfer.State.TRANSFER);
-            setGate(Gate.State.CLOSED);
+            setGate(shooting ? Gate.State.OPEN : Gate.State.CLOSED);
         }
     }
 
@@ -234,8 +238,18 @@ public class LM2Tele extends LinearOpMode {
         wasReady = ready;
     }
 
-    private double clamp(double velocity) {
-        return Math.max(MIN_VELOCITY, Math.min(MAX_VELOCITY, velocity));
+    private void relocalizeInCorner() {
+        double h = Math.toRadians(TurretConstants.CORNER_HEADING_DEG);
+        double halfLength = Math.abs(TurretConstants.ROBOT_LENGTH_IN) / 2.0;
+        double halfWidth = Math.abs(TurretConstants.ROBOT_WIDTH_IN) / 2.0;
+        double halfX = Math.abs(Math.cos(h)) * halfLength + Math.abs(Math.sin(h)) * halfWidth;
+        double halfY = Math.abs(Math.sin(h)) * halfLength + Math.abs(Math.cos(h)) * halfWidth;
+        TurretConstants.Corner corner = TurretConstants.RELOCALIZE_CORNER;
+        boolean left = corner == TurretConstants.Corner.BOTTOM_LEFT || corner == TurretConstants.Corner.TOP_LEFT;
+        boolean bottom = corner == TurretConstants.Corner.BOTTOM_LEFT || corner == TurretConstants.Corner.BOTTOM_RIGHT;
+        double x = left ? halfX : TurretConstants.FIELD_SIZE_IN - halfX;
+        double y = bottom ? halfY : TurretConstants.FIELD_SIZE_IN - halfY;
+        setPose(x, y, TurretConstants.CORNER_HEADING_DEG);
     }
 
     private void setIntake(Intake.State s) {
@@ -272,27 +286,34 @@ public class LM2Tele extends LinearOpMode {
     }
 
     private void addTelemetry() {
-        telemetry.addData("Flywheel", flywheelOn
-                ? String.format("ON  %.0f tps  %s", shooter.getTargetVelocity(),
-                shooter.isReady() ? "READY" : "spinning up")
-                : "OFF");
+        telemetry.addData("Shot", String.format(Locale.US, "%s  %.0f tps  hood %.3f",
+                usingDistance ? "AUTO" : (autoShot ? "FIXED (no Pinpoint)" : "FIXED"),
+                targetVelocity, targetHood));
+        telemetry.addData("Flywheel", shooter.isReady() ? "READY" : "spinning up");
+        telemetry.addData("Target", target);
+        telemetry.addData("Distance (in)", Double.isNaN(distanceIn) ? "-" : String.format(Locale.US, "%.1f", distanceIn));
+        if (Double.isNaN(aimErrorDeg)) {
+            telemetry.addData("Aim", "-");
+        } else if (Math.abs(aimErrorDeg) <= AIM_TOLERANCE_DEG) {
+            telemetry.addData("Aim", "ON TARGET (%.1f deg)", aimErrorDeg);
+        } else {
+            telemetry.addData("Aim", "turn %s %.0f deg", aimErrorDeg > 0 ? "LEFT" : "RIGHT", Math.abs(aimErrorDeg));
+        }
         telemetry.addData("Shooting", shooting ? "YES" : "no");
-        telemetry.addData("Intake", g1.left_bumper ? "REVERSE" : (intakeOn ? "ON" : "OFF"));
-        telemetry.addData("Transfer", g1.left_bumper ? "REVERSE (unjam)" : "ON");
-        telemetry.addData("Hood", hoodState);
+        telemetry.addData("Feed", g1.dpad_down ? "REVERSE (unjam)" : "intake + transfer ON");
         telemetry.addData("Deployable", deployed ? "DOWN" : "UP");
         telemetry.addData("Slow mode", g1.left_trigger > TRIGGER_THRESHOLD ? "ON" : "off");
+        telemetry.addData("Pose", localizer == null ? "Pinpoint not found"
+                : String.format(Locale.US, "x %.1f  y %.1f  h %.1f", poseX, poseY, Math.toDegrees(poseHeading)));
         telemetry.addLine();
-        telemetry.addLine("RT shoot | RB intake on/off | LB unjam | LT slow");
-        telemetry.addLine("D-pad up/down hood | X deployable down/up");
-        telemetry.addLine("Y turret auto/manual | B target 1/2 | D-pad L/R aim trim | A reset trim | BACK reset pose");
-//        turret.addTelemetry(telemetry);
-        telemetry.addData("Pose", "x %.1f  y %.1f  h %.1f", poseX, poseY, Math.toDegrees(poseHeading));
+        telemetry.addLine("RT shoot | LT slow | LB deployable | D-pad down unjam");
+        telemetry.addLine("Y auto/fixed shot | B target 1/2 | BACK corner reset");
         shooter.addTelemetry(telemetry);
         telemetry.update();
     }
 
     private void setPose(double x, double y, double headingDeg) {
+        if (localizer == null) return;
         localizer.setPose(new Pose(x, y, Math.toRadians(headingDeg)));
         poseX = x;
         poseY = y;
@@ -300,6 +321,7 @@ public class LM2Tele extends LinearOpMode {
     }
 
     private void updatePose() {
+        if (localizer == null) return;
         localizer.update();
         Pose pose = localizer.pose();
         if (pose == null) return;
@@ -310,6 +332,13 @@ public class LM2Tele extends LinearOpMode {
         poseX = x;
         poseY = y;
         poseHeading = h;
+    }
+
+    private static double wrap(double a) {
+        a = a % (2 * Math.PI);
+        if (a > Math.PI) a -= 2 * Math.PI;
+        if (a <= -Math.PI) a += 2 * Math.PI;
+        return a;
     }
 
     private static DcMotorSimple.Direction direction(boolean reversed) {

@@ -23,7 +23,6 @@ import org.firstinspires.ftc.teamcode.Ivy.Shooter;
 import org.firstinspires.ftc.teamcode.Ivy.Gate;
 import org.firstinspires.ftc.teamcode.Ivy.Ramp;
 
-
 @Autonomous(name = "Auton1Tip", group = "Autonomous")
 public class Auton1Tip extends LinearOpMode {
 
@@ -49,23 +48,24 @@ public class Auton1Tip extends LinearOpMode {
     public Command autoRoutine() {
         return sequential(
                 parallel(
-                        shooter.on(),
+                        ramp.up(),
+//                        shooter.on(),
                         intake.in(),
                         transfer.transfer(),
                         gate.cl()
                 ),
-                waitMs(2000),
-                gate.op(),
-                waitMs(1000),
-                gate.cl(),
-                follow(follower, move1()),
-                follow(follower, intake1()),
-                follow(follower, park()),
-                parallel(
-                        transfer.idle(),
-                        shooter.idle(),
-                        intake.idle()
-                )
+//                waitMs(2000),
+//                gate.op(),
+//                waitMs(1000),
+//                gate.cl(),
+                follow(follower, move1())
+//                follow(follower, intake1()),
+//                follow(follower, park()),
+//                parallel(
+//                        transfer.idle(),
+////                        shooter.idle(),
+//                        intake.idle()
+//                )
         );
     }
 

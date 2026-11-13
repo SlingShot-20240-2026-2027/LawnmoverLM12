@@ -27,6 +27,8 @@ public class ShooterTuner extends LinearOpMode {
     public static long STEP_TEST_PERIOD_MS = 1500;
     public static double SHOT_DROP_TPS = 40;
     public static double MAX_VELOCITY = 2800;
+    public static double DEFAULT_VELOCITY = 1350;
+    public static double MIN_TUNE_VELOCITY = 200;
 
     private enum Param {P, D, F, VELOCITY, HOOD}
 
@@ -76,6 +78,9 @@ public class ShooterTuner extends LinearOpMode {
         startI = RobotConstants.FLYWHEEL_I;
         startD = RobotConstants.FLYWHEEL_D;
         startF = RobotConstants.FLYWHEEL_F;
+        if (RobotConstants.FLYWHEEL_VELOCITY < MIN_TUNE_VELOCITY) {
+            RobotConstants.FLYWHEEL_VELOCITY = DEFAULT_VELOCITY;
+        }
         startVelocity = RobotConstants.FLYWHEEL_VELOCITY;
         startHood = RobotConstants.HOOD_UP;
 
@@ -174,7 +179,7 @@ public class ShooterTuner extends LinearOpMode {
                 RobotConstants.FLYWHEEL_F = round(Math.max(0, RobotConstants.FLYWHEEL_F + delta));
                 break;
             case VELOCITY:
-                RobotConstants.FLYWHEEL_VELOCITY = round(Math.max(0, Math.min(MAX_VELOCITY, RobotConstants.FLYWHEEL_VELOCITY + delta)));
+                RobotConstants.FLYWHEEL_VELOCITY = round(Math.max(MIN_TUNE_VELOCITY, Math.min(MAX_VELOCITY, RobotConstants.FLYWHEEL_VELOCITY + delta)));
                 break;
             case HOOD:
                 RobotConstants.HOOD_UP = round(Math.max(0, Math.min(1, RobotConstants.HOOD_UP + delta)));
@@ -199,13 +204,13 @@ public class ShooterTuner extends LinearOpMode {
 
     private double commandedVelocity() {
         if (!flywheelOn) return 0;
-        double base = Math.max(0, Math.min(MAX_VELOCITY, RobotConstants.FLYWHEEL_VELOCITY));
+        double base = Math.max(MIN_TUNE_VELOCITY, Math.min(MAX_VELOCITY, RobotConstants.FLYWHEEL_VELOCITY));
         if (stepTest) {
             if (stepTimer.milliseconds() >= STEP_TEST_PERIOD_MS) {
                 stepHigh = !stepHigh;
                 stepTimer.reset();
             }
-            return stepHigh ? base : Math.max(0, base - STEP_TEST_DELTA);
+            return stepHigh ? base : Math.max(MIN_TUNE_VELOCITY, base - STEP_TEST_DELTA);
         }
         return base;
     }

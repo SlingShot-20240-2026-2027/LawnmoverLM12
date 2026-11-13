@@ -24,76 +24,43 @@ import org.firstinspires.ftc.teamcode.Ivy.Gate;
 import org.firstinspires.ftc.teamcode.Ivy.Ramp;
 
 
-@Autonomous(name = "Auton2Tip", group = "Autonomous")
+@Autonomous(name = "", group = "Autonomous")
 public class Auton2Tip extends LinearOpMode {
 
     private Follower follower;
-    private Intake intake;
-    private Transfer transfer;
-    private Shooter shooter;
-    private Hood hood;
-    private Gate gate;
-    private Ramp ramp;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(55.9698, 9.1683, 90);
-    private final Pose move1 = poseFactory.of(9.5662, 9.6402, -92.5584);
-    private final Pose move1Control1 = poseFactory.of(55.9677, 42.3578, 0);
-    private final Pose move1Control2 = poseFactory.of(11.0775, 43.4643, 0);
-    private final Pose point2 = poseFactory.of(16.6809, 22.7161, 267);
-    private final Pose point3 = poseFactory.of(60.543, 118.911, -172.7707);
-    private final Pose point3Control1 = poseFactory.of(20.9232, 113.8852, 0);
-    private final Pose point4 = poseFactory.of(60.5309, 132.4671, -89.9492);
-    private final Pose point5 = poseFactory.of(47.2105, 111.5869, 270);
-    private final Pose point5Control1 = poseFactory.of(59.4066, 116.0037, 0);
-    private final Pose point6 = poseFactory.of(47.261, 126.1652, 89.8016);
-    private final Pose point7 = poseFactory.of(59.9794, 118.63, 90);
-    private final Pose point8 = poseFactory.of(60.3762, 131.6093, -91.7513);
-    private final Pose point9 = poseFactory.of(22.2281, 96.676, 270);
-    private final Pose point9Control1 = poseFactory.of(44.8621, 102.6157, 0);
-    private final Pose point10 = poseFactory.of(25.1049, 47.3061, -86.6651);
-    private final Pose point11 = poseFactory.of(13.4245, 47.2274, -179.6141);
-    private final Pose point12 = poseFactory.of(12.966, 96.2945, 180);
-    private final Pose point12Control1 = poseFactory.of(32.6577, 73.5992, 0);
+    private final Pose start = poseFactory.of(55.8211, 9.0733, 90);
+    private final Pose move1 = poseFactory.of(22.3692, 46.5544, 180);
+    private final Pose intake1 = poseFactory.of(15.1947, 46.475, 180);
+    private final Pose move2 = poseFactory.of(22.37, 46.55, 180);
+    private final Pose move3Start = poseFactory.of(22.37, 46.55, 180);
+    private final Pose move3 = poseFactory.of(22.5708, 111.2059, 270);
+    private final Pose shooter2 = poseFactory.of(60.2298, 132.1451, 270);
+    private final Pose shooter2Control1 = poseFactory.of(56.5692, 110.8359, 0);
+    private final Pose move4 = poseFactory.of(46.2956, 114.7827, 270);
+    private final Pose move4Control1 = poseFactory.of(60.2571, 112.6717, 0);
+    private final Pose intake2 = poseFactory.of(46.3288, 125.4451, 89.8216);
+    private final Pose move5 = poseFactory.of(46.3839, 114.5555, 90);
+    private final Pose shooter3 = poseFactory.of(60.1459, 131.6372, -90.7277);
+    private final Pose shooter3Control1 = poseFactory.of(59.9234, 114.1114, 0);
+    private final Pose park = poseFactory.of(12.6335, 97.9859, 270);
+    private final Pose parkControl1 = poseFactory.of(50.6917, 100.9653, 0);
 
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
-                parallel(
-                        shooter.on(),
-                        intake.in()
-                ),
-                waitMs(2000),
-                transfer.transfer(1000),
-                transfer.idle(),
-                follow(follower, move1()),
-                waitMs(1000),
-                follow(follower, path2()),
-                follow(follower, path3()),
-                follow(follower, path4()),
-                transfer.transfer(1000),
-                transfer.idle(),
-                follow(follower, path5()),
-                ramp.deploy(),
-                follow(follower, path6()),
-                ramp.up(),
-                waitMs(1000),
-                follow(follower, path7()),
-                follow(follower, path8()),
-                transfer.transfer(1000),
-                transfer.idle(),
-                follow(follower, path9()),
-                follow(follower, path10()),
-                ramp.deploy(),
-                follow(follower, path11()),
-                follow(follower, path12()),
-                ramp.up(),
-                parallel(
-                        transfer.idle(),
-                        shooter.idle(),
-                        intake.idle()
-                )
+                follow(follower, move1())
+//                follow(follower, intake1()),
+//                follow(follower, move2()),
+//                follow(follower, move3()),
+//                follow(follower, shooter2()),
+//                follow(follower, move4()),
+//                follow(follower, intake2()),
+//                follow(follower, move5()),
+//                follow(follower, shooter3()),
+//                follow(follower, park())
         );
     }
 
@@ -101,21 +68,14 @@ public class Auton2Tip extends LinearOpMode {
     public void runOpMode() {
         Scheduler.reset();
         follower = Constants.create(hardwareMap);
-        shooter = new Shooter(hardwareMap);
-        transfer = new Transfer(hardwareMap);
-        intake = new Intake(hardwareMap);
-        ramp = new Ramp(hardwareMap);
-        gate = new Gate(hardwareMap);
         follower.setPose(start);
         follower.update();
 
         waitForStart();
-        schedule(shooter.periodic());
         schedule(autoRoutine());
 
         while (opModeIsActive()) {
             follower.update();
-            intake.update();
             Scheduler.execute();
 
             telemetry.addData("x", follower.pose().x());
@@ -132,50 +92,42 @@ public class Auton2Tip extends LinearOpMode {
     }
 
     public Path move1() {
-        return Paths.curve(start, move1Control1, move1Control2, move1).tangent();
+        return Paths.line(start, move1).linear(start, move1);
     }
 
-    public Path path2() {
-        return Paths.line(move1, point2).constant(point2);
+    public Path intake1() {
+        return Paths.line(move1, intake1).constant(intake1);
     }
 
-    public Path path3() {
-        return Paths.curve(point2, point3Control1, point3).reverseTangent();
+    public Path move2() {
+        return Paths.line(intake1, move2).constant(move2);
     }
 
-    public Path path4() {
-        return Paths.line(point3, point4).reverseTangent();
+    public Path move3() {
+        return Paths.line(move3Start, move3).linear(move3Start, move3);
     }
 
-    public Path path5() {
-        return Paths.curve(point4, point5Control1, point5).constant(point5);
+    public Path shooter2() {
+        return Paths.curve(move3, shooter2Control1, shooter2).constant(shooter2);
     }
 
-    public Path path6() {
-        return Paths.line(point5, point6).tangent();
+    public Path move4() {
+        return Paths.curve(shooter2, move4Control1, move4).constant(move4);
     }
 
-    public Path path7() {
-        return Paths.line(point6, point7).constant(point7);
+    public Path intake2() {
+        return Paths.line(move4, intake2).tangent();
     }
 
-    public Path path8() {
-        return Paths.line(point7, point8).reverseTangent();
+    public Path move5() {
+        return Paths.line(intake2, move5).constant(move5);
     }
 
-    public Path path9() {
-        return Paths.curve(point8, point9Control1, point9).constant(point9);
+    public Path shooter3() {
+        return Paths.curve(move5, shooter3Control1, shooter3).reverseTangent();
     }
 
-    public Path path10() {
-        return Paths.line(point9, point10).tangent();
-    }
-
-    public Path path11() {
-        return Paths.line(point10, point11).tangent();
-    }
-
-    public Path path12() {
-        return Paths.curve(point11, point12Control1, point12).constant(point12);
+    public Path park() {
+        return Paths.curve(shooter3, parkControl1, park).constant(park);
     }
 }

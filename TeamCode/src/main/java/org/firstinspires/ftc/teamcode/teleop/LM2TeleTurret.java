@@ -86,7 +86,7 @@ public class LM2TeleTurret extends LinearOpMode {
         gate = new Gate(hardwareMap);
         ramp = new Ramp(hardwareMap);
         turret = new Turret(hardwareMap);
-//        localizer = new PinpointLocalizer(hardwareMap, Constants.localizerConfig);
+        localizer = new PinpointLocalizer(hardwareMap, Constants.localizerConfig);
 
         setGate(Gate.State.CLOSED);
         hood.setState(manualHood);
